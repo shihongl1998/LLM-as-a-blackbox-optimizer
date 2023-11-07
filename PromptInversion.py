@@ -22,18 +22,12 @@ def encode_image(image_path):
         return base64.b64encode(image_file.read()).decode('utf-8')
 
 # Function to ask chatgpt for a prompt
-def ask_chatgpt_for_prompt(image_folder_dir, original_image_name, iter, original_image_base64, last_prompt):
+def ask_chatgpt_for_prompt(image_folder_dir, original_image_name, iter, original_image_base64, last_prompt, text_prompts_and_responses):
 
     prompt = f'''
-    The first attached image is the original image, and the second attached image is the generated image. \
-      Conduct a thorough comparison, emphasizing discrepancies in elements such as lighting, textures, perspective, facial expressions, \
-        object interactions, and background elements, in addition to content, style, details, composition, color, and mood. The original \
-          prompt is: {last_prompt}. Use this analysis to articulate two targeted modifications to the text prompt that would rectify \
-            identified issues and bring the generated image into closer alignment with the original. Ensure these modifications are \
-              precise, likely to be interpreted correctly by an AI, and pertain to aspects like descriptive adjectives, spatial \
-                relations, color, and lighting terms. Slightly alter the original prompt directly to include these modifications. \
-                  Respond only with the revised text prompt and exclude any additional commentary.
+    The first attached image is the original image, and the second attached image is the generated image. Conduct a thorough comparison, emphasizing discrepancies in elements such as lighting, textures, perspective, facial expressions, object interactions, and background elements, in addition to content, style, details, composition, color, and mood. The original prompt is: {last_prompt}. Use this analysis to articulate two targeted modifications to the text prompt that would rectify identified issues and bring the generated image into closer alignment with the original. Ensure these modifications are precise, likely to be interpreted correctly by an AI, and pertain to aspects like descriptive adjectives, spatial relations, color, and lighting terms. Slightly alter the original prompt directly to include these modifications. Respond only with the revised text prompt and exclude any additional commentary.
     '''
+    text_prompts_and_responses['iterative_comparison_prompt'] = prompt
 
     original_image_base64 = original_image_base64
     candidate_image = f'{image_folder_dir}/from_{original_image_name}_iter_{iter}.png'
@@ -96,6 +90,15 @@ def ask_dalle_for_image(image_folder_dir, original_image_name, iter, prompt, cli
     with open(f'{image_folder_dir}/from_{original_image_name}_iter_{iter+1}.png', 'wb') as f:
         f.write(base64.b64decode(temp_image_base64))
 
+def catch_error(e):
+  # Extract the message from the error
+  error_dict = e.args[0] if e.args else {}
+  error_message = error_dict.get('message', '') if isinstance(error_dict, dict) else str(e)
+  print(f"An error occurred: {error_message}")
+  text_prompts_and_responses[f'error_message'] = error_message
+  with open(f'{args.image_dir}/{args.original_image_name}.json', 'w') as outfile:
+    json.dump(text_prompts_and_responses, outfile)
+  exit()
 
 if __name__ == "__main__":
   args = parse_args()
@@ -114,8 +117,7 @@ if __name__ == "__main__":
   print('----Init------')
   print('------------------')
   ## Generate text prompt for an initial candidate image
-  instruction_init_prompt = 'Generate a detailed text prompt that can be used to recreate the attached image using an image generator. \
-    Please only reply with a text prompt, and do not include any other text in your response.'
+  instruction_init_prompt = 'Generate a detailed text prompt that can be used to recreate the attached image using an image generator. Please only reply with a text prompt, and do not include any other text in your response.'
   text_prompts_and_responses['initial_prompt_inversion'] = instruction_init_prompt
   image_prefix = f'{args.image_dir}/{args.original_image_name}'
   if os.path.isfile(f'{image_prefix}.jpg'):
@@ -185,15 +187,17 @@ if __name__ == "__main__":
       print('------------------')
       print('----Temp------')
       print('------------------')
+      try:
+        prompt = ask_chatgpt_for_prompt(args.image_dir, args.original_image_name, i, original_image_base64, temp_prompt, text_prompts_and_responses)
+      except openai.error.BadRequestError as e:
+        catch_error(e)
 
-      prompt = ask_chatgpt_for_prompt(args.image_dir, args.original_image_name, i, original_image_base64, temp_prompt)
-      text_prompts_and_responses[f'prompt_iter_{i}'] = prompt
+      text_prompts_and_responses[f'prompt_iter_{i+1}'] = prompt
+      with open(f'{args.image_dir}/{args.original_image_name}.json', 'w') as outfile:
+        json.dump(text_prompts_and_responses, outfile)
 
       temp_prompt = prompt
 
-      print(f"Refined Prompt from GPT4-V [iteration {i}]: \n" + temp_prompt)
+      print(f"Refined Prompt from GPT4-V [iteration {i+1}]: \n" + temp_prompt)
 
       ask_dalle_for_image(args.image_dir, args.original_image_name, i, prompt, client)
-
-  with open(f'{args.image_dir}/{args.original_image_name}.json', 'w') as outfile:
-    json.dump(text_prompts_and_responses, outfile)
