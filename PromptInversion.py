@@ -78,7 +78,7 @@ def ask_chatgpt_for_prompt(image_folder_dir, original_image_name, iter, original
 
     return temp_prompt
 
-def ask_dalle_for_image(image_folder_dir, original_image_name, iter, prompt, client, args):
+def ask_dalle_for_image(image_folder_dir, original_image_name, iter, prompt, client):
 
     instruction_temp_image = prompt
 
@@ -122,6 +122,7 @@ if __name__ == "__main__":
      original_image = f'{image_prefix}.png' 
   else:
       print("Image not found (must be .jpg or .png).")
+      exit()
   original_image_base64 = encode_image(original_image)
 
   headers = {
