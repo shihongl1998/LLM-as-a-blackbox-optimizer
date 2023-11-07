@@ -1,3 +1,9 @@
+# api key
+openai_api.py
+
+# Images 
+Images/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
