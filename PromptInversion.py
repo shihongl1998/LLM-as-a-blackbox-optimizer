@@ -1,14 +1,14 @@
-
 import openai
 import base64
 import requests
 import argparse
 import os
+import json
 
 from openai import OpenAI
 from openai_api import OPENAI_API_KEY
 
-# Set Image Directory
+# Set image directory and original image name
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--image_dir', type=str, help='Experimental folder directory.', default=f'{os.getenv("HOME")}/LLM-as-a-blackbox-optimizer/Images')
@@ -27,13 +27,13 @@ def ask_chatgpt_for_prompt(image_folder_dir, original_image_name, iter, original
     prompt = f'''
     The first attached image is the original image, and the second attached image is the generated image. 
     Perform a detailed comparison between the original and generated images, focusing on differences in content, style, details, \
-      composition, color, and mood, and articulate three precise alterations to the text prompt that could enhance the accuracy of \
-        the recreated image. Be highly specific and actionable, and make unambiguous suggestions. 
-    Then mofify the original prompt to incorporate your suggestions. 
+      composition, color, mood, and more. From this analysis, specify three precise alterations to the text prompt that could enhance the accuracy of \
+        the recreated image. Be highly specific and actionable with unambiguous suggestions. Marginally modify the original \
+          prompt to incorporate your suggestions.
     The original prompt is: 
     {last_prompt}
 
-    Please only reply with a text prompt, and do not include any other text in your response.
+    Only reply with a text prompt, and do not include any other text in your response.
     '''
 
     original_image_base64 = original_image_base64
@@ -93,15 +93,17 @@ def ask_dalle_for_image(image_folder_dir, original_image_name, iter, prompt, cli
 
     temp_image_base64 = response.data[0].b64_json
 
-    # make base 64 image into a png file
+    # Convert base 64 image into a png file
     with open(f'{image_folder_dir}/from_{original_image_name}_iter_{iter+1}.png', 'wb') as f:
         f.write(base64.b64decode(temp_image_base64))
 
 
 if __name__ == "__main__":
-  # Get Image Directory
   args = parse_args()
   print(args)
+
+  # Save Text Prompts for Reference
+  text_prompts_and_responses = dict()
 
   # OpenAI API Key
   api_key = OPENAI_API_KEY
@@ -115,6 +117,7 @@ if __name__ == "__main__":
   ## Generate text prompt for an initial candidate image
   instruction_init_prompt = 'Generate a detailed text prompt that can be used to recreate the attached image using an image generator. \
     Please only reply with a text prompt, and do not include any other text in your response.'
+  text_prompts_and_responses['initial_prompt_inversion'] = instruction_init_prompt
   image_prefix = f'{args.image_dir}/{args.original_image_name}'
   if os.path.isfile(f'{image_prefix}.jpg'):
     original_image = f'{image_prefix}.jpg'
@@ -154,13 +157,13 @@ if __name__ == "__main__":
   response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
 
   init_prompt = response.json()["choices"][0]["message"]["content"]
+  text_prompts_and_responses['initial_prompt'] = init_prompt
 
-  print("This is init prompt from GPT4-V: " + init_prompt)        
+  print("Initial Prompt from GPT4-V: \n" + init_prompt)
 
   ## Use the initial prompt to generate a new image
-
-  instruction_init_image = 'Use the detailed prompt provided to generate a single image that aims to replicate the attached \
-    image as closely as possible, without deviating from the details specified in the prompt: ' + init_prompt
+  instruction_init_image = 'Create this exact image (ensure only one is generated) without any changes to the prompt: ' + init_prompt
+  text_prompts_and_responses['initial_image_generation_prompt'] = instruction_init_image
 
   response = client.images.generate(
     model="dall-e-3",
@@ -173,22 +176,25 @@ if __name__ == "__main__":
 
   init_image_base64 = response.data[0].b64_json
 
-  # make base 64 image into a png file
+  # Convert base 64 image into a png file
   with open(f'{args.image_dir}/from_{args.original_image_name}_iter_0.png', 'wb') as f:
       f.write(base64.b64decode(init_image_base64))
 
   temp_prompt = init_prompt
 
   for i in range(5):
-
       print('------------------')
       print('----Temp------')
       print('------------------')
 
       prompt = ask_chatgpt_for_prompt(args.image_dir, args.original_image_name, i, original_image_base64, temp_prompt)
-
-      ask_dalle_for_image(args.image_dir, args.original_image_name, i, prompt, client)
+      text_prompts_and_responses[f'prompt_iter_{i}'] = prompt
 
       temp_prompt = prompt
 
-      print("This is temp prompt from GPT4-V: " + temp_prompt)
+      print(f"Refined Prompt from GPT4-V [iteration {i}]: \n" + temp_prompt)
+
+      ask_dalle_for_image(args.image_dir, args.original_image_name, i, prompt, client)
+
+  with open(f'{args.image_dir}/{args.original_image_name}.json', 'w') as outfile:
+    json.dump(text_prompts_and_responses, outfile)
