@@ -25,15 +25,14 @@ def encode_image(image_path):
 def ask_chatgpt_for_prompt(image_folder_dir, original_image_name, iter, original_image_base64, last_prompt):
 
     prompt = f'''
-    The first attached image is the original image, and the second attached image is the generated image. 
-    Perform a detailed comparison between the original and generated images, focusing on differences in content, style, details, \
-      composition, color, mood, and more. From this analysis, specify three precise alterations to the text prompt that could enhance the accuracy of \
-        the recreated image. Be highly specific and actionable with unambiguous suggestions. Marginally modify the original \
-          prompt to incorporate your suggestions.
-    The original prompt is: 
-    {last_prompt}
-
-    Only reply with a text prompt, and do not include any other text in your response.
+    The first attached image is the original image, and the second attached image is the generated image. \
+      Conduct a thorough comparison, emphasizing discrepancies in elements such as lighting, textures, perspective, facial expressions, \
+        object interactions, and background elements, in addition to content, style, details, composition, color, and mood. The original \
+          prompt is: {last_prompt}. Use this analysis to articulate two targeted modifications to the text prompt that would rectify \
+            identified issues and bring the generated image into closer alignment with the original. Ensure these modifications are \
+              precise, likely to be interpreted correctly by an AI, and pertain to aspects like descriptive adjectives, spatial \
+                relations, color, and lighting terms. Slightly alter the original prompt directly to include these modifications. \
+                  Respond only with the revised text prompt and exclude any additional commentary.
     '''
 
     original_image_base64 = original_image_base64
