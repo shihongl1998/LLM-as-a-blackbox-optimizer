@@ -25,7 +25,12 @@ def encode_image(image_path):
 def ask_chatgpt_for_prompt(image_folder_dir, original_image_name, iter, original_image_base64, last_prompt, text_prompts_and_responses):
 
     prompt = f'''
-    The first attached image is the original image, and the second attached image is the generated image. Conduct a thorough comparison, emphasizing discrepancies in elements such as lighting, textures, perspective, facial expressions, object interactions, and background elements, in addition to content, style, details, composition, color, and mood. The original prompt is: {last_prompt}. Use this analysis to articulate two targeted modifications to the text prompt that would rectify identified issues and bring the generated image into closer alignment with the original. Ensure these modifications are precise, likely to be interpreted correctly by an AI, and pertain to aspects like descriptive adjectives, spatial relations, color, and lighting terms. Slightly alter the original prompt directly to include these modifications. Respond only with the revised text prompt and exclude any additional commentary.
+    The first attached image is the original image. The second attached image is the generated image.
+    Compare and contrast the original image with the generated image, focusing on the differences in the most striking visual elements: color and contrast, subject focus, composition, details and texture, lighting and shadows, size and scale, perspective and depth, object positions, facial expressions and body language (if applicable), and background context.
+    The original prompt is: {last_prompt}.
+    With consideration to (not excluding other elements) this contrast analysis, suggest 3 changes to the original prompt in-place to increase the accuracy of the recreated image.
+    Ensure the prompt is only modified with the 3 most important changes, and the rest is intact.
+    Respond only with the revised text prompt and exclude any additional commentary.
     '''
     text_prompts_and_responses['iterative_comparison_prompt'] = prompt
 
@@ -92,10 +97,8 @@ def ask_dalle_for_image(image_folder_dir, original_image_name, iter, prompt, cli
 
 def catch_error(e):
   # Extract the message from the error
-  error_dict = e.args[0] if e.args else {}
-  error_message = error_dict.get('message', '') if isinstance(error_dict, dict) else str(e)
-  print(f"An error occurred: {error_message}")
-  text_prompts_and_responses[f'error_message'] = error_message
+  print(f"An error occurred: {e}")
+  text_prompts_and_responses[f'error_message'] = e
   with open(f'{args.image_dir}/{args.original_image_name}.json', 'w') as outfile:
     json.dump(text_prompts_and_responses, outfile)
   exit()
@@ -189,7 +192,7 @@ if __name__ == "__main__":
       print('------------------')
       try:
         prompt = ask_chatgpt_for_prompt(args.image_dir, args.original_image_name, i, original_image_base64, temp_prompt, text_prompts_and_responses)
-      except openai.error.BadRequestError as e:
+      except openai.BadRequestError as e:
         catch_error(e)
 
       text_prompts_and_responses[f'prompt_iter_{i+1}'] = prompt
