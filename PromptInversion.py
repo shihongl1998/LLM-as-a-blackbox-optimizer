@@ -25,12 +25,13 @@ def encode_image(image_path):
 def ask_chatgpt_for_prompt(image_folder_dir, original_image_name, iter, original_image_base64, last_prompt, text_prompts_and_responses):
 
     prompt = f'''
-    The first attached image is the original image, and the second attached image is the generated image.
-    Act as a prompt inversion tool. Compare the original and generated images and analyze: Subject Matter, Color Scheme, Composition, Detail Level, Style and Aesthetic, Perspective and Depth, Lighting and Shadow, Scale and Proportions, Emotional Tone, Context and Environment, Texture and Material, Facial Features and Expressions (if applicable), Movement and Dynamics, Symbolism and Metaphors, Cultural and Historical Accuracy, Consistency, Uniqueness and Creativity, Anatomical Accuracy (if applicable), and Alignment with Theme or Concept.
-    Please suggest three most important changes to the text prompt enhance the accuracy of the recreated image to be more similar to the original image.
-    Original prompt: {last_prompt}
-    Be actionable, specific, and unambiguous. Only include needed changes to the generated images. 
-    Do not directly refer to the original image in the text prompt.
+    The statement in triple quotes is extra important: """The first attached image is the original image, and the second attached image is the generated image."""
+    Act as a prompt inversion tool. Compare the original and generated images and analyze: Subject Matter, Color Scheme, Composition, Detail Level, Style and Aesthetic, Perspective and Depth, Lighting and Shadow, Scale and Proportions, Emotional Tone, Context and Environment, Texture and Material, Facial Features and Expressions (if applicable), Movement and Dynamics, Symbolism and Metaphors, Cultural and Historical Accuracy, Consistency, Uniqueness and Creativity, Anatomical Accuracy (if applicable), Alignment with Theme or Concept, and Localization of Objects and Their Pose.
+    Think to yourself three important augmentations to the text prompt to be more similar to the original image.
+    Think to yourself three important augmentations to the text prompt to be more dissimilar to the generated image.
+    Be actionable, specific, and unambiguous in the changes and do not directly refer to the original image in the text prompt.
+    First, incorporate all 4 changes together to update the original prompt in-place: {last_prompt}
+    Then evaluate yourself if the new text prompt has improved to be more representative of the original image, otherwise, repeat the process until you are satisfied with the improvements.
     Respond only with the revised text prompt and exclude any additional commentary.
     '''
     text_prompts_and_responses['iterative_comparison_prompt'] = prompt
@@ -68,7 +69,8 @@ def ask_chatgpt_for_prompt(image_folder_dir, original_image_name, iter, original
             ]
         }
         ],
-        "max_tokens": 300
+        "max_tokens": 300,
+        "temperature": 0.7
     }
 
     response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
@@ -96,14 +98,6 @@ def ask_dalle_for_image(image_folder_dir, original_image_name, iter, prompt, cli
     with open(f'{image_folder_dir}/from_{original_image_name}_iter_{iter+1}.png', 'wb') as f:
         f.write(base64.b64decode(temp_image_base64))
 
-def catch_error(e):
-  # Extract the message from the error
-  print(f"An error occurred: {e}")
-  text_prompts_and_responses[f'error_message'] = str(e)
-  with open(f'{args.image_dir}/{args.original_image_name}.json', 'w') as outfile:
-    json.dump(text_prompts_and_responses, outfile)
-  exit()
-
 if __name__ == "__main__":
   args = parse_args()
   print(args)
@@ -121,7 +115,7 @@ if __name__ == "__main__":
   print('----Init------')
   print('------------------')
   ## Generate text prompt for an initial candidate image
-  instruction_init_prompt = 'Generate a detailed text prompt that can be used to recreate the attached image using an image generator. Please only reply with a text prompt, and do not include any other text in your response.'
+  instruction_init_prompt = 'Generate a semi-detailed text prompt to recreate the attached image using an image generator using only 4 sentences. Please only reply with a text prompt, and do not include any other text in your response.'
   text_prompts_and_responses['initial_prompt_inversion'] = instruction_init_prompt
   image_prefix = f'{args.image_dir}/{args.original_image_name}'
   if os.path.isfile(f'{image_prefix}.jpg'):
@@ -156,7 +150,8 @@ if __name__ == "__main__":
           ]
         }
       ],
-      "max_tokens": 300
+      "max_tokens": 300,
+      "temperature": 0.7
   }
 
   response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
@@ -167,7 +162,7 @@ if __name__ == "__main__":
   print("Initial Prompt from GPT4-V: \n" + init_prompt)
 
   ## Use the initial prompt to generate a new image
-  instruction_init_image = 'Create this exact image (ensure only one is generated) without any changes to the prompt: ' + init_prompt
+  instruction_init_image = 'Create this exact image without any changes to the prompt: ' + init_prompt
   text_prompts_and_responses['initial_image_generation_prompt'] = instruction_init_image
 
   response = client.images.generate(
@@ -202,5 +197,9 @@ if __name__ == "__main__":
       print(f"Refined Prompt from GPT4-V [iteration {i+1}]: \n" + temp_prompt)
       try:
         ask_dalle_for_image(args.image_dir, args.original_image_name, i, prompt, client)
-      except openai.BadRequestError as e:
-        catch_error(e)
+      except Exception as e:
+        print(f"An error occurred: {e}")
+        text_prompts_and_responses[f'error_message'] = str(e)
+        with open(f'{args.image_dir}/{args.original_image_name}.json', 'w') as outfile:
+          json.dump(text_prompts_and_responses, outfile)
+        exit()
