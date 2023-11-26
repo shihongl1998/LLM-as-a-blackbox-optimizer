@@ -70,7 +70,7 @@ def ask_chatgpt_for_prompt(image_folder_dir, original_image_name, iter, original
         }
         ],
         "max_tokens": 300,
-        "temperature": 0.7
+        "temperature": 0.2
     }
 
     response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
@@ -112,10 +112,10 @@ if __name__ == "__main__":
   client = OpenAI(api_key=OPENAI_API_KEY)
 
   print('------------------')
-  print('----Init------')
+  print('-------Init-------')
   print('------------------')
   ## Generate text prompt for an initial candidate image
-  instruction_init_prompt = 'Generate a semi-detailed text prompt to recreate the attached image using an image generator using only 4 sentences. Please only reply with a text prompt, and do not include any other text in your response.'
+  instruction_init_prompt = 'Generate a detailed text prompt to recreate the attached image using an image generator using only 4 sentences. Please only reply with a text prompt, and do not include any other text in your response.'
   text_prompts_and_responses['initial_prompt_inversion'] = instruction_init_prompt
   image_prefix = f'{args.image_dir}/{args.original_image_name}'
   if os.path.isfile(f'{image_prefix}.jpg'):
@@ -151,12 +151,15 @@ if __name__ == "__main__":
         }
       ],
       "max_tokens": 300,
-      "temperature": 0.7
+      "temperature": 1.0
   }
 
   response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
 
-  init_prompt = response.json()["choices"][0]["message"]["content"]
+  try:
+    init_prompt = response.json()["choices"][0]["message"]["content"]
+  except:
+    print(response.json())
   text_prompts_and_responses['initial_prompt'] = init_prompt
 
   print("Initial Prompt from GPT4-V: \n" + init_prompt)
@@ -183,9 +186,9 @@ if __name__ == "__main__":
   temp_prompt = init_prompt
 
   for i in range(5):
-      print('------------------')
-      print('----Temp------')
-      print('------------------')
+      print('----------------------------------------')
+      print('----Generating Next Prompt and Image----')
+      print('----------------------------------------')
       prompt = ask_chatgpt_for_prompt(args.image_dir, args.original_image_name, i, original_image_base64, temp_prompt, text_prompts_and_responses)
 
       text_prompts_and_responses[f'prompt_iter_{i+1}'] = prompt
