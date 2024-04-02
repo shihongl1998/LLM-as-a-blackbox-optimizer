@@ -1,9 +1,5 @@
 # LLM-as-a-blackbox-optimizer
 
-## :tada: Big News!
-
-We're excited to announce that we've recently made significant updates to our codebase! 
-
 ## :open_file_folder: Prompt Inversion Function
 
 One of the most exciting updates is the application of our method on *Prompt Inversion*! 
