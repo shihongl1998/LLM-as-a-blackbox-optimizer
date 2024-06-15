@@ -1,32 +1,50 @@
 # LLM-as-a-blackbox-optimizer
-
-## :open_file_folder: Prompt Inversion Function
-
-One of the most exciting updates is the application of our method on *Prompt Inversion*! 
-
-### What is Prompt Inversion?
-
-Prompt inversion is a powerful feature that enables our system to reverse-engineer the prompts from their generated outputs. It has a wide array of applications, from debugging to enhancing user understanding of how our models work.
-
-### Key Features:
-
-- **GPT4-V:** set as the Black-box Evaluation Function of the pipeline in our paper
-- **DALL·E 3:** newest vision language model from OpenAI
-
-## :camera: Sneak Peek
-
-Here's a quick look at the Prompt Inversion function in action:
-
-![Prompt Inversion Function](PromptInversion.png)
+This repository contains code for CVPR 2024 paper "Language Models as Black-Box Optimizers for Vision-Language Models". It contains the code for auto-optimizing VLM with LLM and prompt-inversion. 
 
 
+![My Image Description](pics/Framework.png)
 
-## :arrow_down: Get Started
+# Environment Setup
+We recommend to install the environment through conda and pip. You should make a new environment with python>=3.9
 
-To get started with prompt inversion, you can clone our repository and follow the documentation provided in PromptInversion.py
+`conda create -n cross_modal python=3.9`
+
+Next, you can download pytorch from official site, for example:
+
+`conda install pytorch torchvision torchaudio cudatoolkit=11.3 -c pytorch`
+
+Next, run 
+
+`pip install -r requirements.txt` 
+
+in this repo to install a few more packages required by CLIP.
+
+# Dataset Installation
+Follow DATASETS.md to install the downstream datasets. We use the CoOp split of data (including the few-shot splits for seed 1-3, except for ImageNet) to ensure a fair comparison.
+
+# Methodology
+## Text-to-Image Optimization 
+![Prompt Inversion Function](pics/Text2Image.png)
+
+## Prompt Inversion
+![Prompt Inversion Function](pics/PromptInversion.png)
 
 
-## Main Paper
-This codebase contains scripts for paper "Language Models as Black-Box Optimizers for Vision-Language Models". Code to be released soon!
+# Citation
 
-![My Image Description](promptgpt.png)
+If you use this code in your research, please kindly cite the following papers:
+```
+@misc{liu2024language,
+      title={Language Models as Black-Box Optimizers for Vision-Language Models}, 
+      author={Shihong Liu and Zhiqiu Lin and Samuel Yu and Ryan Lee and Tiffany Ling and Deepak Pathak and Deva Ramanan},
+      year={2024},
+      eprint={2309.05950},
+      archivePrefix={arXiv},
+      primaryClass={id='cs.CL' full_name='Computation and Language' is_active=True alt_name='cmp-lg' in_archive='cs' is_general=False description='Covers natural language processing. Roughly includes material in ACM Subject Class I.2.7. Note that work on artificial languages (programming languages, logics, formal systems) that does not explicitly address natural-language issues broadly construed (natural-language processing, computational linguistics, speech, text retrieval, etc.) is not appropriate for this area.'}
+}
+```
+
+
+
+
+
