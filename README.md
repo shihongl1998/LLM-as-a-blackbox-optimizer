@@ -45,6 +45,3 @@ If you use this code in your research, please kindly cite the following papers:
 ```
 
 
-
-<iframe style="width:100%;height:auto;min-width:600px;min-height:400px;" src="https://star-history.com/embed?secret=Z2l0aHViX3BhdF8xMUFaQkxOWUEwVG8yTmxJMjJqUDh4XzNtTGVwUGhZTFZIdHp4QXRTaDR0UVJXU0FSSGt3aGwzOVhwTzlVbU52QWJRWElDWEhGNFlzNUMwOHFH#shihongl1998/LLM-as-a-blackbox-optimizer&Date" frameBorder="0"></iframe>
-
