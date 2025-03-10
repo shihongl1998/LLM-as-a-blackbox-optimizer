@@ -47,6 +47,10 @@ parser.add_argument(
     help="seed for selecting laion templates",
 )
 parser.add_argument(
+    '--sample_size', type=int, default=80,
+    help="number of sampling size of selecting laion templates",
+)
+parser.add_argument(
     "--template_pool_size", type=int, default=3,
     help="the size of template pool to show for ChatGPT (default: 3)",
 )
@@ -158,10 +162,10 @@ def main(args):
 
     print("Template Pool Constructing...")
     # get initial templates
-    def get_init_templates(init_templates, dataset, seed):
-        if init_templates == 'laioncoco':
+    def get_init_templates(init_templates, dataset, seed, sample_size):
+        if init_templates == 'laioncoco': # Please run load_laioncoco_templates.py to sample from 1M laioncoco templates first. Data will be saved to laion_coco_results
             LAION_COCO_DIR = './laion_coco_results/'
-            with open(os.path.join(LAION_COCO_DIR, 'sample_size_10000' ,f'laion_coco_samples_seed_{seed}.txt'), 'r') as f:
+            with open(os.path.join(LAION_COCO_DIR, f'laion_coco_samples_size_{sample_size}_seed_{seed}.txt'), 'r') as f:
                 lines = f.readlines()
                 templates = [line.strip() for line in lines]
             return templates
@@ -170,7 +174,7 @@ def main(args):
         else:
             return INIT_TEMPLATES[init_templates]
         
-    init_templates = get_init_templates(args.init_templates, args.dataset, args.laion_seed)
+    init_templates = get_init_templates(args.init_templates, args.dataset, args.laion_seed, args.sample_size)
 
     # evaluate initial templates performance on train/val/test set
     prompt_dict = {}

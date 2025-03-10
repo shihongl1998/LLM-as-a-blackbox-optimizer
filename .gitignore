@@ -4,6 +4,9 @@ openai_api.py
 # Images 
 Images/
 
+# Data
+laion_coco_results
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

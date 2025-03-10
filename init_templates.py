@@ -229,7 +229,7 @@ COOP_SELECTED = {
     "ucf101": ['a photo of a person doing {}.'],
 }
 
-# This is kept empty. Laioncoco templates will be loaded from the json file in auto_promt.py   
+# This is kept empty. Laioncoco templates will be loaded from the json file in auto_prompt_image_classfication.py   
 LAIONCOCO_SELECTED = {
 }
     
